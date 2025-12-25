@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec Academy | Interactive Lab</title>
+    <style>
+        /* --- 1. CSS STYLES --- */
+        :root {
+            --bg-dark: #0a0f1c;
+            --bg-panel: #162032;
+            --accent-green: #00ff9d;
+            --accent-blue: #2d8cf0;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(10, 15, 28, 0.95);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--accent-green); font-family: var(--font-mono); cursor: pointer; }
+        .nav-links { display: flex; gap: 20px; list-style: none; }
+        .nav-links li a { 
+            text-decoration: none; 
+            color: var(--text-main); 
+            transition: 0.3s; 
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .nav-links li a:hover, .nav-links li a.active { color: var(--accent-green); }
+
+        /* Page Structure */
+        .page-section { display: none; animation: fadeIn 0.5s; flex: 1; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Layout Utilities */
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .hero { text-align: center; padding: 80px 20px; }
+        .hero h1 { font-size: 3rem; margin-bottom: 20px; background: linear-gradient(to right, var(--accent-green), var(--accent-blue)); -webkit-background-clip: text; color: transparent; }
+        
+        /* Buttons */
+        .btn { background: var(--accent-blue); padding: 12px 25px; border-radius: 5px; font-weight: bold; display: inline-block; cursor: pointer; margin: 5px; text-decoration: none; color: white; border: none; }
+        .btn:hover { background: var(--accent-green); color: var(--bg-dark); }
+        .btn-outline { background: transparent; border: 1px solid var(--accent-green); color: var(--accent-green); }
+        
+        /* Download Button Specific */
+        .btn-download {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 100%;
+            text-align: left;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-download:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+        /* Card Design */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: transform 0.3s; cursor: pointer;}
+        .card:hover { transform: translateY(-5px); border-color: var(--accent-green); }
+        .card-content { padding: 20px; }
+        .card h3 { color: var(--accent-green); margin-bottom: 10px; }
+
+        /* Simulated UI for Tools */
+        .ui-simulation { height: 160px; background: #000; padding: 10px; font-family: var(--font-mono); font-size: 0.75rem; color: #ccc; overflow: hidden; border-bottom: 1px solid var(--border); }
+        .nmap-ui { color: var(--accent-green); }
+        .wire-ui table { width: 100%; border-collapse: collapse; }
+        .wire-ui th { text-align: left; border-bottom: 1px solid #444; color: var(--accent-blue); }
+        .wire-ui td { padding: 2px 0; }
+        .hydra-ui { color: #f59e0b; }
+
+        /* MODAL SYSTEM */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: var(--bg-panel);
+            width: 90%;
+            max-width: 700px;
+            border-radius: 10px;
+            border: 1px solid var(--accent-green);
+            padding: 30px;
+            position: relative;
+            animation: slideUp 0.3s;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+        .close-modal:hover { color: white; }
+        .modal-code { background: #000; padding: 15px; border-radius: 5px; font-family: var(--font-mono); margin: 15px 0; border-left: 3px solid var(--accent-blue); color: var(--text-main); }
+
+        /* INTERACTIVE TERMINAL (UPDATED) */
+        .lab-grid { display: grid; grid-template-columns: 1fr 3fr; gap: 20px; align-items: start; }
+        .config-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 20px; border-radius: 10px; }
+        .config-panel label { display: block; margin-bottom: 5px; color: var(--accent-blue); font-size: 0.9rem; }
+        .config-panel input[type="text"] { width: 100%; padding: 8px; margin-bottom: 15px; background: #000; border: 1px solid var(--border); color: var(--accent-green); font-family: var(--font-mono); }
+        .config-panel input[type="checkbox"] { margin-right: 10px; }
+        
+        .terminal-window { background: #1e1e1e; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; border: 1px solid #333; height: 500px; display: flex; flex-direction: column; }
+        .terminal-header { background: #333; padding: 10px; display: flex; gap: 8px; flex-shrink: 0; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ff5f56; } .yellow { background: #ffbd2e; } .green { background: #27c93f; }
+        
+        .terminal-body { padding: 20px; font-family: var(--font-mono); color: var(--text-main); flex-grow: 1; overflow-y: auto; font-size: 0.95rem; }
+        .output-line { margin-bottom: 5px; line-height: 1.4; }
+        .success { color: var(--accent-green); }
+        .error { color: #ff5f56; }
+        .info { color: var(--accent-blue); }
+        
+        .input-line { display: flex; align-items: center; margin-top: 10px; }
+        .prompt { color: var(--accent-green); margin-right: 10px; font-weight: bold; }
+        #term-input { background: transparent; border: none; color: white; font-family: var(--font-mono); font-size: 0.95rem; flex-grow: 1; outline: none; }
+
+        /* Timeline & Slides */
+        .timeline { position: relative; max-width: 800px; margin: 0 auto; }
+        .timeline::after { content: ''; position: absolute; width: 4px; background-color: var(--border); top: 0; bottom: 0; left: 20px; margin-left: -2px; }
+        .timeline-item { padding: 10px 40px; position: relative; background-color: inherit; width: 100%; }
+        .timeline-item::after { content: ''; position: absolute; width: 20px; height: 20px; right: auto; left: 10px; background-color: var(--accent-blue); border: 4px solid var(--bg-dark); top: 15px; border-radius: 50%; z-index: 1; }
+        .timeline-content { padding: 20px; background-color: var(--bg-panel); border-radius: 6px; border: 1px solid var(--border); }
+        .slide-container { background: #000; border: 2px solid var(--border); border-radius: 10px; height: 400px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .slide { display: none; padding: 40px; height: 100%; text-align: center; justify-content: center; flex-direction: column; animation: fadeIn 0.3s; }
+        .slide.active-slide { display: flex; }
+        .slide-controls { background: #111; padding: 15px; display: flex; justify-content: space-between; border-top: 1px solid var(--border); }
+
+        footer { text-align: center; padding: 20px; background: var(--bg-panel); border-top: 1px solid var(--border); margin-top: auto; }
+        
+        @media (max-width: 768px) {
+            .lab-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo" onclick="showPage('home')">CyberSec_Academy</div>
+        <ul class="nav-links">
+            <li><a onclick="showPage('home')" id="nav-home" class="active">Home</a></li>
+            <li><a onclick="showPage('tools')" id="nav-tools">Tools</a></li>
+            <li><a onclick="showPage('roadmap')" id="nav-roadmap">Path</a></li>
+            <li><a onclick="showPage('resources')" id="nav-resources">Resources</a></li>
+            <li><a onclick="showPage('learn')" id="nav-learn">Lab</a></li>
+        </ul>
+    </nav>
+
+    <section id="home" class="page-section active">
+        <header class="hero">
+            <h1>Master the Art of Cyber Defense</h1>
+            <p>Your complete roadmap from beginner to professional ethical hacker.</p>
+            <br>
+            <a onclick="showPage('roadmap')" class="btn">View Roadmap</a>
+            <a onclick="showPage('learn')" class="btn btn-outline">Start Simulator</a>
+        </header>
+
+        <div class="container">
+            <div class="grid">
+                <div class="card card-content" onclick="showPage('learn')">
+                    <h3>1. Interactive Lab</h3>
+                    <p>Type commands, edit scenarios, and simulate attacks in real-time.</p>
+                </div>
+                <div class="card card-content" onclick="showPage('tools')">
+                    <h3>2. Visual Tools</h3>
+                    <p>Learn 6+ major security tools with detailed popups.</p>
+                </div>
+                <div class="card card-content" onclick="showPage('resources')">
+                    <h3>3. Live Resources</h3>
+                    <p>Download cheatsheets and view learning slides.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tools" class="page-section">
+        <div class="container">
+            <h1>Security Tools Arsenal</h1>
+            <p style="margin-bottom: 30px; color: var(--text-muted);">Click on any card to view detailed usage instructions.</p>
+            <div class="grid">
+                <div class="card" onclick="openToolModal('nmap')">
+                    <div class="ui-simulation nmap-ui"> > nmap -O 192.168.1.5<br>Starting Nmap...<br>[+] Host is up. </div>
+                    <div class="card-content"><h3>Nmap</h3><p>Network Mapper.</p></div>
+                </div>
+                <div class="card" onclick="openToolModal('wireshark')">
+                    <div class="ui-simulation wire-ui"><table><tr><th>Info</th></tr><tr><td>SYN, ACK</td></tr></table></div>
+                    <div class="card-content"><h3>Wireshark</h3><p>Protocol Analyzer.</p></div>
+                </div>
+                <div class="card" onclick="openToolModal('metasploit')">
+                    <div class="ui-simulation nmap-ui" style="color: #3b82f6;"> msf6 > exploit </div>
+                    <div class="card-content"><h3>Metasploit</h3><p>Exploitation Framework.</p></div>
+                </div>
+                <div class="card" onclick="openToolModal('john')">
+                    <div class="ui-simulation nmap-ui" style="color: #f87171;"> Loaded 1 password hash... </div>
+                    <div class="card-content"><h3>John the Ripper</h3><p>Password Cracker.</p></div>
+                </div>
+                <div class="card" onclick="openToolModal('hydra')">
+                    <div class="ui-simulation hydra-ui"> [DATA] attacking ssh://... </div>
+                    <div class="card-content"><h3>Hydra</h3><p>Login Cracker.</p></div>
+                </div>
+                <div class="card" onclick="openToolModal('aircrack')">
+                    <div class="ui-simulation nmap-ui" style="color: #c084fc;"> (Handshake captured!) </div>
+                    <div class="card-content"><h3>Aircrack-ng</h3><p>WiFi Security.</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="tool-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeToolModal()">&times;</span>
+            <h2 id="modal-title" style="color: var(--accent-green); margin-bottom: 10px;">Tool Name</h2>
+            <p id="modal-desc" style="color: var(--text-muted); margin-bottom: 20px;">Description.</p>
+            <div id="modal-code" class="modal-code">Code</div>
+            <ul id="modal-usage" style="margin-left: 20px; line-height: 1.6;"></ul>
+            <button class="btn" onclick="closeToolModal()" style="margin-top: 20px; width: 100%;">Close Details</button>
+        </div>
+    </div>
+
+    <section id="roadmap" class="page-section">
+        <div class="container">
+            <h1 style="text-align: center; margin-bottom: 40px;">Learning Path</h1>
+            <div class="timeline">
+                <div class="timeline-item"><div class="timeline-content"><h2>Phase 1: Fundamentals</h2><p>Networking & Linux.</p></div></div>
+                <div class="timeline-item"><div class="timeline-content"><h2>Phase 2: Scripting</h2><p>Python & Nmap.</p></div></div>
+                <div class="timeline-item"><div class="timeline-content"><h2>Phase 3: Web Security</h2><p>OWASP Top 10.</p></div></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="resources" class="page-section">
+        <div class="container">
+            <h1>Learning Materials</h1>
+            <div class="grid" style="grid-template-columns: 1fr 2fr;">
+                <div>
+                    <h3 style="color: var(--accent-green);">Downloads</h3>
+                    <button class="btn btn-download" onclick="downloadResource('nmap')"><span>📄 Nmap Sheet</span>⬇</button>
+                    <button class="btn btn-download" onclick="downloadResource('linux')"><span>📄 Linux Guide</span>⬇</button>
+                </div>
+                <div>
+                    <h3 style="color: var(--accent-green);">Slides</h3>
+                    <div class="slide-container">
+                        <div class="slide active-slide" id="slide-1"><h2>Intro</h2><p>Welcome to Ethical Hacking.</p></div>
+                        <div class="slide" id="slide-2"><h2>Concept</h2><p>White Hat vs Black Hat.</p></div>
+                        <div class="slide-controls">
+                            <button class="btn" onclick="changeSlide(-1)">Prev</button>
+                            <button class="btn" onclick="changeSlide(1)">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="learn" class="page-section">
+        <div class="container">
+            <h1>Interactive Simulation Lab</h1>
+            <p style="margin-bottom: 20px;">Configure your target on the left, then attack it using the terminal on the right.</p>
+            
+            <div class="lab-grid">
+                <div class="config-panel">
+                    <h3 style="color: var(--accent-green); margin-bottom: 20px;">1. Edit Scenario</h3>
+                    
+                    <label>Target IP Address:</label>
+                    <input type="text" id="target-ip" value="192.168.1.10">
+
+                    <label style="margin-top: 20px;">Open Ports:</label>
+                    <div style="margin-bottom: 10px;">
+                        <input type="checkbox" id="port-21" checked> <span style="color: #fff;">21 (FTP)</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <input type="checkbox" id="port-22" checked> <span style="color: #fff;">22 (SSH)</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <input type="checkbox" id="port-80" checked> <span style="color: #fff;">80 (HTTP)</span>
+                    </div>
+                    
+                    <div style="margin-top: 20px; font-size: 0.8rem; color: var(--text-muted);">
+                        * Changes apply immediately to the simulation engine.
+                    </div>
+                </div>
+
+                <div class="terminal-window" onclick="document.getElementById('term-input').focus()">
+                    <div class="terminal-header">
+                        <div class="dot red"></div> <div class="dot yellow"></div> <div class="dot green"></div>
+                        <span style="font-size: 12px; color: #aaa; margin-left: 10px;">root@kali: ~ (zsh)</span>
+                    </div>
+                    <div class="terminal-body" id="term-output">
+                        <div class="output-line info">Welcome to CyberSec OS v1.0</div>
+                        <div class="output-line">Type <span class="success">'help'</span> to see available commands.</div>
+                        <div class="output-line">Try running an Nmap scan on your target.</div>
+                        <br>
+                    </div>
+                    <div style="padding: 0 20px 20px 20px;">
+                        <div class="input-line">
+                            <span class="prompt">root@kali:~#</span>
+                            <input type="text" id="term-input" autocomplete="off" spellcheck="false">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2023 CyberSec Academy. Educational Use Only.</p>
+    </footer>
+
+    <script>
+        // --- 1. TOOL DATA & MODALS ---
+        const toolData = {
+            nmap: { title: "Nmap", desc: "Network discovery and auditing.", code: "nmap -sV 192.168.1.1", usage: ["Host discovery", "Port scanning"] },
+            wireshark: { title: "Wireshark", desc: "Network protocol analyzer.", code: "Filter: ip.addr == 10.0.0.1", usage: ["Packet analysis", "Troubleshooting"] },
+            metasploit: { title: "Metasploit", desc: "Penetration testing framework.", code: "use exploit/multi/handler", usage: ["Exploitation", "Payload delivery"] },
+            john: { title: "John the Ripper", desc: "Password cracker.", code: "john --wordlist=rockyou.txt hash", usage: ["Password auditing", "Hash cracking"] },
+            hydra: { title: "Hydra", desc: "Login cracker.", code: "hydra -l root -P pass.txt ssh://ip", usage: ["Brute force SSH/FTP"] },
+            aircrack: { title: "Aircrack-ng", desc: "WiFi security suite.", code: "aircrack-ng capture.cap", usage: ["WiFi Hacking"] }
+        };
+
+        function openToolModal(key) {
+            const d = toolData[key];
+            if(!d) return;
+            document.getElementById('modal-title').innerText = d.title;
+            document.getElementById('modal-desc').innerText = d.desc;
+            document.getElementById('modal-code').innerText = d.code;
+            const ul = document.getElementById('modal-usage');
+            ul.innerHTML = "";
+            d.usage.forEach(u => { const li = document.createElement('li'); li.innerText = u; ul.appendChild(li); });
+            document.getElementById('tool-modal').style.display = 'flex';
+        }
+        function closeToolModal() { document.getElementById('tool-modal').style.display = 'none'; }
+
+        // --- 2. NAVIGATION ---
+        function showPage(id) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+            document.getElementById('nav-'+id).classList.add('active');
+            if(id === 'learn') setTimeout(() => document.getElementById('term-input').focus(), 100);
+        }
+
+        // --- 3. SLIDES ---
+        let currSlide = 1;
+        function changeSlide(dir) {
+            document.getElementById('slide-'+currSlide).classList.remove('active-slide');
+            currSlide += dir;
+            if(currSlide > 2) currSlide = 1; if(currSlide < 1) currSlide = 2;
+            document.getElementById('slide-'+currSlide).classList.add('active-slide');
+        }
+
+        // --- 4. DOWNLOADS ---
+        function downloadResource(type) {
+            alert("Simulating download for " + type + "...");
+        }
+
+        // --- 5. INTERACTIVE TERMINAL LOGIC (THE NEW PART) ---
+        const termInput = document.getElementById('term-input');
+        const termOutput = document.getElementById('term-output');
+
+        termInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const command = termInput.value.trim();
+                processCommand(command);
+                termInput.value = '';
+            }
+        });
+
+        function printToTerminal(text, className = '') {
+            const div = document.createElement('div');
+            div.className = 'output-line ' + className;
+            div.innerHTML = text; // Allow HTML for colors
+            termOutput.appendChild(div);
+            // Auto scroll to bottom
+            termOutput.scrollTop = termOutput.scrollHeight;
+        }
+
+        function processCommand(cmd) {
+            // Echo the command
+            printToTerminal(`<span class="prompt">root@kali:~#</span> ${cmd}`);
+
+            if (cmd === '') return;
+
+            const parts = cmd.split(' ');
+            const baseCmd = parts[0].toLowerCase();
+            const args = parts.slice(1);
+
+            // --- READ SIMULATION CONFIG ---
+            const configIP = document.getElementById('target-ip').value;
+            const ports = [];
+            if(document.getElementById('port-21').checked) ports.push("21/tcp   open  ftp");
+            if(document.getElementById('port-22').checked) ports.push("22/tcp   open  ssh");
+            if(document.getElementById('port-80').checked) ports.push("80/tcp   open  http");
+
+            // --- COMMAND LOGIC ---
+            switch(baseCmd) {
+                case 'help':
+                    printToTerminal("Available Commands:", "info");
+                    printToTerminal("  nmap [ip]    - Scan a target (Try the IP in config!)");
+                    printToTerminal("  whoami       - Print current user");
+                    printToTerminal("  clear        - Clear terminal screen");
+                    printToTerminal("  date         - Show current date");
+                    break;
+
+                case 'clear':
+                    termOutput.innerHTML = '';
+                    break;
+
+                case 'whoami':
+                    printToTerminal("root");
+                    break;
+                
+                case 'date':
+                    printToTerminal(new Date().toString());
+                    break;
+
+                case 'nmap':
+                    if (args.length === 0) {
+                        printToTerminal("Usage: nmap &lt;target_ip&gt;", "error");
+                        return;
+                    }
+                    
+                    const target = args[0];
+                    printToTerminal(`Starting Nmap 7.92 at ${new Date().toLocaleTimeString()}...`, "info");
+                    
+                    // Simulate delay
+                    setTimeout(() => {
+                        if (target === configIP) {
+                            printToTerminal(`Nmap scan report for ${target}`);
+                            printToTerminal("Host is up (0.0012s latency).");
+                            printToTerminal("PORT     STATE SERVICE", "info");
+                            if (ports.length > 0) {
+                                ports.forEach(p => printToTerminal(p, "success"));
+                            } else {
+                                printToTerminal("All scanned ports are closed.", "error");
+                            }
+                        } else {
+                            printToTerminal(`Note: Host seems down. If it is really up, but blocking our ping probes, try -Pn`, "error");
+                            printToTerminal(`(Hint: Check the Target IP in the Config Panel on the left!)`, "info");
+                        }
+                    }, 800);
+                    break;
+
+                default:
+                    printToTerminal(`bash: ${baseCmd}: command not found`, "error");
+            }
+        }
+    </script>
+</body>
+</html>
